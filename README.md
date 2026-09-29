@@ -2,7 +2,35 @@
 um sistema de linha de comando para gerenciar: cadastro de animais, triagem de adotantes, reservas, adoções, devoluções, quarentena e relatórios. Com políticas configuráveis (ex.: idade mínima do adotante, tipo de moradia vs. porte do animal), lista de espera com prioridade, cálculo de taxa por estratégia (idade/porte/saúde) e persistência com repositórios.
 
 # UML textual
-Classe Animal (VacinavelMixin, AdestravelMixin):
+```text
+ENUMS
+===================================================================
+Enum StatusAnimal:
+  Status:
+    DISPONIVEL
+    RESERVADO
+    ADOTADO
+    DEVOLVIDO
+    QUARENTENA
+    INADOTAVEL
+
+MIXINS
+===================================================================
+Mixin VacinavelMixin:
+  Atributos:
+    historico_vacinas: List[dict]
+  Métodos:
+    vacinar(nome_vacina: str, data: str) -> None
+
+Mixin AdestravelMixin:
+  Atributos:
+    nivel_adestramento: int
+  Métodos:
+    treinar(pontos: int) -> None
+
+CLASSES DE DOMÍNIO
+===================================================================
+Classe Abstrata Animal (VacinavelMixin, AdestravelMixin):
   Atributos Principais:
     id: str
     nome: str
@@ -24,16 +52,7 @@ Classe Animal (VacinavelMixin, AdestravelMixin):
     __hash__() -> int
     __lt__(other) -> bool  (ordenação por data de entrada)
     __iter__() -> Iterator (iteração pelo histórico)
-    
-Enum StatusAnimal:
-  Status:
-    DISPONIVEL
-    RESERVADO
-    ADOTADO
-    DEVOLVIDO
-    QUARENTENA
-    INADOTAVEL
-  
+
 Classe Cachorro (Herda de Animal):
   Atributos Específicos:
     necessidade_passeio: str (baixa, media, alta)
@@ -77,16 +96,30 @@ Classe FilaEspera:
     proximo() -> Adotante
     __len__() -> int
 
-========================Mixins===========================
-Mixin VacinavelMixin:
-  Atributos:
-    historico_vacinas: List[dict]
+PADRÃO STRATEGY (TAXAS)
+===================================================================
+Classe Abstrata BaseFeeStrategy:
   Métodos:
-    vacinar(nome_vacina: str, data: str) -> None
+    calcular_taxa(animal: Animal) -> float
 
-Mixin AdestravelMixin:
-  Atributos:
-    nivel_adestramento: int
+Classe SeniorFeeStrategy (Herda de BaseFeeStrategy)
+Classe PuppyFeeStrategy (Herda de BaseFeeStrategy)
+Classe SpecialCareFeeStrategy (Herda de BaseFeeStrategy)
+
+REPOSITÓRIOS E SERVIÇOS
+===================================================================
+Interface BaseRepository[T]:
   Métodos:
-    treinar(pontos: int) -> None
+    salvar(item: T)
+    buscar_por_id(id: str)
+    listar()
+    deletar(id: str)
 
+Classe AnimalRepositoryJSON / SQLite (Implementa BaseRepository)
+Classe AdotanteRepositoryJSON / SQLite (Implementa BaseRepository)
+
+Classe SistemaAdocaoService:
+  Responsabilidade:
+    Orquestrar triagem, calculo de compatibilidade (0-100),
+    geração de contrato, reservas, devoluções e relatórios.
+```
